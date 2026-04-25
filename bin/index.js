@@ -100,6 +100,9 @@ function createEnv() {
   content = appendIfMissing(content, "BOOTSTRAP_ADMIN_TENANT_EMAIL_CONTATO", "admin@maess.dev");
   content = appendIfMissing(content, "BOOTSTRAP_ADMIN_TENANT_TELEFONE_CONTATO", "000000000");
 
+  content = appendIfMissing(content, "MAESS_ENV", "local");
+  content = appendIfMissing(content, "MAESS_PLAN", "free");
+
   fs.writeFileSync(envPath, content.trim() + "\n");
 
   log("✅ .env configurado!");

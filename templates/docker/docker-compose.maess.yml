@@ -12,7 +12,20 @@ services:
     volumes:
       - mongodb_data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--username", "${MONGO_INITDB_ROOT_USERNAME}", "--password", "${MONGO_INITDB_ROOT_PASSWORD}", "--authenticationDatabase", "admin", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      test:
+        [
+          "CMD",
+          "mongosh",
+          "--username",
+          "${MONGO_INITDB_ROOT_USERNAME}",
+          "--password",
+          "${MONGO_INITDB_ROOT_PASSWORD}",
+          "--authenticationDatabase",
+          "admin",
+          "--quiet",
+          "--eval",
+          "db.adminCommand('ping').ok",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -42,10 +55,20 @@ services:
       BOOTSTRAP_ADMIN_USUARIO_NOME: ${BOOTSTRAP_ADMIN_USUARIO_NOME}
       BOOTSTRAP_ADMIN_USUARIO_SECRET: ${BOOTSTRAP_ADMIN_USUARIO_SECRET}
       BOOTSTRAP_ADMIN_USUARIO_APIKEY: ${BOOTSTRAP_ADMIN_USUARIO_APIKEY}
+      MAESS_ENV: ${MAESS_ENV}
+      MAESS_PLAN: ${MAESS_PLAN}
     volumes:
       - data_protection_keys:${DATA_PROTECTION_KEYS_PATH:-/var/lib/maess-memory/data-protection-keys}
     healthcheck:
-      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=5).read()"]
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import urllib.request;
+            urllib.request.urlopen('http://127.0.0.1:8080/health',
+            timeout=5).read()",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
