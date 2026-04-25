@@ -1,7 +1,23 @@
 {
   "name": "@maess-systems/memory-cli",
   "version": "0.1.2",
+  "description": "CLI to configure Maess Memory hooks and project metadata.",
+  "keywords": [
+    "codex",
+    "cli",
+    "memory",
+    "hooks",
+    "automation"
+  ],
+  "license": "MIT",
   "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node bin/index.js",
+    "check": "node --check bin/index.js"
+  },
   "bin": {
     "maess-memory": "bin/index.js"
   }

@@ -1,0 +1,17 @@
+# Project runtime files
+.env
+.codex/
+
+# Python hook artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Node.js local installs
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS metadata
+.DS_Store
