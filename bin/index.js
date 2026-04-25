@@ -129,8 +129,8 @@ async function main() {
 // =========================
 // Codex Config (hooks=true)
 // =========================
-import os from "os";
-import readline from "readline";
+import readline from "node:readline";
+import os from "node:os";
 
 function findCodexConfig() {
   const home = os.homedir();
