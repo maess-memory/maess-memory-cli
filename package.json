@@ -19,6 +19,7 @@
     "check": "node --check bin/index.js"
   },
   "bin": {
+    "maess": "bin/index.js",
     "maess-memory": "bin/index.js"
   }
 }
