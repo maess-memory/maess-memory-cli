@@ -178,10 +178,28 @@ function downDocker() {
   );
 }
 
-function logsDocker() {
+function restartDocker() {
+  log("🔄 Reiniciando os containers do Maess Memory...\n");
+  runDockerCompose(
+    "restart",
+    "✅ Containers reiniciados.",
+    "❌ Erro ao reiniciar os containers."
+  );
+}
+
+function statusDocker() {
+  log("📊 Status atual do Maess Memory...\n");
+  runDockerCompose(
+    "ps",
+    "",
+    "❌ Erro ao consultar o status dos containers."
+  );
+}
+
+function logsDocker(extraArgs = "") {
   log("📜 Exibindo logs do Maess Memory...\n");
   runDockerCompose(
-    "logs -f",
+    `logs -f ${extraArgs}`.trim(),
     "",
     "❌ Erro ao exibir os logs.",
     { ignoreInterrupt: true }
@@ -241,12 +259,12 @@ function ensureHooksEnabled(content) {
 }
 
 function ensureMcpServer(content, apiKey) {
-  if (content.includes("[mcp_servers.maess]")) {
+  if (content.includes("[mcp_servers.maess-memory]")) {
     return content;
   }
 
   return content + `
-[mcp_servers.maess]
+[mcp_servers.maess-memory]
 command = "npx"
 args = ["maess-memory", "mcp"]
 env = { MAESS_API_KEY = "${apiKey}" }
@@ -304,34 +322,55 @@ function start() {
   startDocker();
 }
 
+function printUsage() {
+  log("Uso:");
+  log("  maess init | maess-memory init");
+  log("  maess start | maess-memory start");
+  log("  maess up | maess-memory up");
+  log("  maess stop | maess-memory stop");
+  log("  maess restart | maess-memory restart");
+  log("  maess down | maess-memory down");
+  log("  maess status | maess-memory status");
+  log("  maess logs [args...] | maess-memory logs [args...]");
+  log("  maess help | maess-memory help");
+}
+
 // =========================
 // Entry (CORRIGIDO)
 // =========================
 (async () => {
-  const command = process.argv[2];
+  const [command, ...commandArgs] = process.argv.slice(2);
 
   switch (command) {
     case "init":
       await init();
       break;
     case "start":
+    case "up":
       start();
       break;
     case "stop":
       stopDocker();
       break;
+    case "restart":
+      restartDocker();
+      break;
     case "down":
       downDocker();
       break;
+    case "status":
+    case "ps":
+      statusDocker();
+      break;
     case "logs":
-      logsDocker();
+      logsDocker(commandArgs.join(" "));
+      break;
+    case "help":
+    case "--help":
+    case "-h":
+      printUsage();
       break;
     default:
-      log("Uso:");
-      log("  maess init | maess-memory init");
-      log("  maess start | maess-memory start");
-      log("  maess stop | maess-memory stop");
-      log("  maess down | maess-memory down");
-      log("  maess logs | maess-memory logs");
+      printUsage();
   }
 })();

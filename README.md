@@ -20,9 +20,12 @@ O pacote expõe os binários `maess` e `maess-memory` / The package exposes the 
 - copia os hooks de [`templates/hooks/`](templates/hooks/) para `.codex/hooks/` / copies hooks from [`templates/hooks/`](templates/hooks/) into `.codex/hooks/`;
 - sobrescreve [`templates/codex/hooks.json`](templates/codex/hooks.json) em `.codex/hooks.json` / overwrites `.codex/hooks.json` with the packaged config.
 - `maess start` sobe os serviços com `docker compose up -d` / starts the services with `docker compose up -d`;
+- `maess up` é um alias de `start` / `up` is an alias for `start`;
 - `maess stop` para todos os containers do stack / stops all stack containers;
+- `maess restart` reinicia os containers sem recriar a stack / restarts containers without rebuilding the stack;
 - `maess down` executa `docker compose down -v` / runs `docker compose down -v`;
-- `maess logs` mostra os logs em modo follow, como `docker compose logs -f` / shows logs in follow mode, like `docker compose logs -f`.
+- `maess status` mostra o estado atual com `docker compose ps` / shows current state with `docker compose ps`;
+- `maess logs [serviços/opções]` mostra os logs em modo follow, como `docker compose logs -f` / shows logs in follow mode, like `docker compose logs -f`.
 
 ## Instalação / Installation
 
@@ -50,9 +53,13 @@ Ou use o binário curto exposto pelo pacote / Or use the short binary exposed by
 ```bash
 maess
 maess start
+maess up
 maess stop
+maess restart
 maess down
+maess status
 maess logs
+maess help
 ```
 
 O alias `maess-memory` também continua disponível / The `maess-memory` alias is also still available.
