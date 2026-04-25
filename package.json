@@ -1,0 +1,8 @@
+{
+  "name": "@maess-systems/memory-cli",
+  "version": "0.1.1",
+  "type": "module",
+  "bin": {
+    "maess-memory": "bin/index.js"
+  }
+}
