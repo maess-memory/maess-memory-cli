@@ -1,6 +1,6 @@
 {
   "name": "@maess-systems/memory-cli",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "CLI to configure Maess Memory hooks and project metadata.",
   "keywords": [
     "codex",
