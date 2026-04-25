@@ -11,6 +11,7 @@ node bin/index.js
 ```
 
 Rode o comando na raiz do projeto alvo / Run the command from the target project root.
+O pacote expõe os binários `maess` e `maess-memory` / The package exposes the `maess` and `maess-memory` binaries.
 
 ## O que ele faz / What it does
 
@@ -18,6 +19,10 @@ Rode o comando na raiz do projeto alvo / Run the command from the target project
 - adiciona `MAESS_MEMORY_AMBIENTE=dev` se a variável ainda não existir / adds `MAESS_MEMORY_AMBIENTE=dev` if missing;
 - copia os hooks de [`templates/hooks/`](templates/hooks/) para `.codex/hooks/` / copies hooks from [`templates/hooks/`](templates/hooks/) into `.codex/hooks/`;
 - sobrescreve [`templates/codex/hooks.json`](templates/codex/hooks.json) em `.codex/hooks.json` / overwrites `.codex/hooks.json` with the packaged config.
+- `maess start` sobe os serviços com `docker compose up -d` / starts the services with `docker compose up -d`;
+- `maess stop` para todos os containers do stack / stops all stack containers;
+- `maess down` executa `docker compose down -v` / runs `docker compose down -v`;
+- `maess logs` mostra os logs em modo follow, como `docker compose logs -f` / shows logs in follow mode, like `docker compose logs -f`.
 
 ## Instalação / Installation
 
@@ -31,7 +36,7 @@ Se o pacote for publicado no npm, uma instalação global ficaria assim / If the
 
 ```bash
 npm install -g @maess-systems/memory-cli
-maess-memory
+maess
 ```
 
 Ou execute sob demanda com `npx` após publicar o pacote / Or run it ad hoc with `npx` once the package is published:
@@ -39,6 +44,18 @@ Ou execute sob demanda com `npx` após publicar o pacote / Or run it ad hoc with
 ```bash
 npx @maess-systems/memory-cli
 ```
+
+Ou use o binário curto exposto pelo pacote / Or use the short binary exposed by the package:
+
+```bash
+maess
+maess start
+maess stop
+maess down
+maess logs
+```
+
+O alias `maess-memory` também continua disponível / The `maess-memory` alias is also still available.
 
 ## Estrutura / Structure
 

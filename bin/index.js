@@ -126,7 +126,7 @@ function hasDocker() {
   }
 }
 
-function startDocker() {
+function runDockerCompose(args, successMessage, errorMessage, options = {}) {
   if (!hasDocker()) {
     log("❌ Docker não encontrado.");
     log("👉 Instale o Docker Desktop.");
@@ -134,18 +134,58 @@ function startDocker() {
   }
 
   try {
-    log("🚀 Iniciando Maess Memory...\n");
-
     execSync(
-      "docker compose --env-file .env -f .maess/docker-compose.maess.yml up -d",
+      `docker compose --env-file .env -f .maess/docker-compose.maess.yml ${args}`,
       { stdio: "inherit" }
     );
 
-    log("\n🎉 Maess Memory rodando!");
-    log("🌐 http://localhost:3000\n");
-  } catch {
-    log("❌ Erro ao iniciar Docker.");
+    if (successMessage) {
+      log(`\n${successMessage}`);
+    }
+  } catch (error) {
+    if (options.ignoreInterrupt && error?.signal === "SIGINT") {
+      return;
+    }
+
+    log(errorMessage);
   }
+}
+
+function startDocker() {
+  log("🚀 Iniciando Maess Memory...\n");
+  runDockerCompose(
+    "up -d",
+    "🎉 Maess Memory rodando!\n🌐 http://localhost:3000",
+    "❌ Erro ao iniciar Docker."
+  );
+}
+
+function stopDocker() {
+  log("🛑 Parando os containers do Maess Memory...\n");
+  runDockerCompose(
+    "stop",
+    "✅ Containers parados.",
+    "❌ Erro ao parar os containers."
+  );
+}
+
+function downDocker() {
+  log("🧹 Removendo stack do Maess Memory...\n");
+  runDockerCompose(
+    "down -v",
+    "✅ Stack removida.",
+    "❌ Erro ao executar docker compose down -v."
+  );
+}
+
+function logsDocker() {
+  log("📜 Exibindo logs do Maess Memory...\n");
+  runDockerCompose(
+    "logs -f",
+    "",
+    "❌ Erro ao exibir os logs.",
+    { ignoreInterrupt: true }
+  );
 }
 
 // =========================
@@ -257,7 +297,7 @@ async function init() {
   await setupCodexConfig();
 
   log("\n🎉 Setup concluído!");
-  log("👉 Rode: npx maess-memory start\n");
+  log("👉 Rode: maess start\n");
 }
 
 function start() {
@@ -277,9 +317,21 @@ function start() {
     case "start":
       start();
       break;
+    case "stop":
+      stopDocker();
+      break;
+    case "down":
+      downDocker();
+      break;
+    case "logs":
+      logsDocker();
+      break;
     default:
       log("Uso:");
-      log("  npx maess-memory init");
-      log("  npx maess-memory start");
+      log("  maess init | maess-memory init");
+      log("  maess start | maess-memory start");
+      log("  maess stop | maess-memory stop");
+      log("  maess down | maess-memory down");
+      log("  maess logs | maess-memory logs");
   }
 })();
