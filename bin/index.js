@@ -87,7 +87,9 @@ function setupCodex() {
 
   // garantir permissão no shell script
   try {
-    execSync(`chmod +x ${path.join(hooksDest, "hook_probe.sh")}`);
+    const hookProbePath = path.join(hooksDest, "hook_probe.sh");
+    const currentMode = fs.statSync(hookProbePath).mode;
+    fs.chmodSync(hookProbePath, currentMode | 0o111);
   } catch {
     log("⚠️ Não foi possível aplicar chmod automaticamente (ok no Windows)");
   }
@@ -109,21 +111,21 @@ function validateEnvironment() {
 // =========================
 // Main
 // =========================
-async function main() {
+function main() {
   log("🚀 Configurando Maess Memory...\n");
 
   validateEnvironment();
   createEnv();
   setupCodex();
 
-  await setupCodexConfig();
-
-  log("\n🎉 Configuração concluída com sucesso!");
-  log("");
-  log("Próximos passos:");
-  log("1. Abra o projeto no Codex");
-  log("2. Comece a usar normalmente");
-  log("3. A memória já estará ativa automaticamente");
+  return setupCodexConfig().then(() => {
+    log("\n🎉 Configuração concluída com sucesso!");
+    log("");
+    log("Próximos passos:");
+    log("1. Abra o projeto no Codex");
+    log("2. Comece a usar normalmente");
+    log("3. A memória já estará ativa automaticamente");
+  });
 }
 
 // =========================
@@ -210,4 +212,7 @@ async function setupCodexConfig() {
   log("✅ Hooks habilitados com sucesso!");
 }
 
-main();
+main().catch(error => {
+  log(`❌ Erro ao configurar Maess Memory: ${error.message}`);
+  process.exitCode = 1;
+});
