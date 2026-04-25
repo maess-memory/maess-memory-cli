@@ -1,7 +1,5 @@
 # maess-memory-cli
 
-![version](https://img.shields.io/badge/version-0.1.18-blue)
-
 Maess Memory é uma camada de memória externa para agentes de IA. Ele captura, consolida e recupera conhecimento útil com contexto de tenant, organização, usuário, tarefa e origem.
 
 Este pacote é o CLI para usar e administrar o Maess Memory na sua máquina local. Com ele, você prepara o projeto, sobe o ambiente e instala a integração com o Codex usando o comando `maess`.
