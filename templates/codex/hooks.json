@@ -1,0 +1,85 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/env bash \"$(git rev-parse --show-toplevel)/.codex/hooks/hook_probe.sh\"",
+            "statusMessage": "Probe SessionStart",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/memory_reader.py\"",
+            "statusMessage": "Consultando memórias do projeto",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/memory_reader.py\"",
+            "statusMessage": "Buscando memórias relevantes",
+            "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/memory_writer.py\"",
+            "statusMessage": "Registrando pré-candidatos da sessão",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/memory_reader.py\"",
+            "statusMessage": "Checando memórias para Bash",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/memory_writer.py\"",
+            "statusMessage": "Filtrando memória útil",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/env bash \"$(git rev-parse --show-toplevel)/.codex/hooks/hook_probe.sh\"",
+            "statusMessage": "Probe Stop",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/memory_writer.py\"",
+            "statusMessage": "Persistindo resumo útil",
+            "timeout": 20
+          }
+        ]
+      }
+    ]
+  }
+}
