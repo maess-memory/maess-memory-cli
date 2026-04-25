@@ -109,7 +109,7 @@ function validateEnvironment() {
 // =========================
 // Main
 // =========================
-function main() {
+async function main() {
   log("🚀 Configurando Maess Memory...\n");
 
   validateEnvironment();
