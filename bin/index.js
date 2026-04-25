@@ -96,6 +96,8 @@ function createEnv() {
   content = appendIfMissing(content, "BOOTSTRAP_ADMIN_USUARIO_SECRET", generateRandom(16));
   content = appendIfMissing(content, "BOOTSTRAP_ADMIN_USUARIO_APIKEY", generateRandom(24));
 
+   content = appendIfMissing(content, "BOOTSTRAP_ADMIN_TENANT_NOME", "maess");
+
   fs.writeFileSync(envPath, content.trim() + "\n");
 
   log("✅ .env configurado!");
