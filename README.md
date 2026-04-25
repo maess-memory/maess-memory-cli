@@ -1,6 +1,6 @@
 # maess-memory-cli
 
-![version](https://img.shields.io/badge/version-0.1.16-blue)
+![version](https://img.shields.io/badge/version-0.1.18-blue)
 
 Maess Memory é uma camada de memória externa para agentes de IA. Ele captura, consolida e recupera conhecimento útil com contexto de tenant, organização, usuário, tarefa e origem.
 
