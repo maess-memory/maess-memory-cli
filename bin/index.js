@@ -133,7 +133,7 @@ function startDocker() {
     log("🚀 Iniciando Maess Memory...\n");
 
     execSync(
-      "docker compose -f .maess/docker-compose.maess.yml up -d",
+      "docker compose --env-file .env -f .maess/docker-compose.maess.yml up -d",
       { stdio: "inherit" }
     );
 
