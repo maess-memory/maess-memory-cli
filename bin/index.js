@@ -116,12 +116,98 @@ function main() {
   createEnv();
   setupCodex();
 
+  await setupCodexConfig();
+
   log("\n🎉 Configuração concluída com sucesso!");
   log("");
   log("Próximos passos:");
   log("1. Abra o projeto no Codex");
   log("2. Comece a usar normalmente");
   log("3. A memória já estará ativa automaticamente");
+}
+
+// =========================
+// Codex Config (hooks=true)
+// =========================
+import os from "os";
+import readline from "readline";
+
+function findCodexConfig() {
+  const home = os.homedir();
+
+  const possiblePaths = [
+    path.join(home, ".codex", "config.toml"),
+    path.join(home, ".config", "codex", "config.toml"),
+  ];
+
+  return possiblePaths.find(p => fs.existsSync(p));
+}
+
+function askQuestion(question) {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise(resolve => {
+    rl.question(question, answer => {
+      rl.close();
+      resolve(answer.trim().toLowerCase());
+    });
+  });
+}
+
+async function setupCodexConfig() {
+  log("\n🔧 Verificando configuração do Codex...");
+
+  const configPath = findCodexConfig();
+
+  if (!configPath) {
+    log("⚠️ Não encontramos o config.toml do Codex.");
+    log("👉 Configure manualmente:");
+    log("~/.codex/config.toml");
+    log("\nAdicione:");
+    log("[features]");
+    log("hooks = true\n");
+    return;
+  }
+
+  let content = fs.readFileSync(configPath, "utf-8");
+
+  if (content.includes("hooks = true")) {
+    log("✅ Hooks já estão habilitados no Codex.");
+    return;
+  }
+
+  log(`Arquivo encontrado: ${configPath}\n`);
+
+  log("Para ativar memória automática, precisamos habilitar hooks.");
+  log("Isso irá adicionar:\n");
+  log("[features]");
+  log("hooks = true\n");
+
+  const answer = await askQuestion("Deseja aplicar automaticamente? (Y/n) ");
+
+  if (answer === "n") {
+    log("\nSem problemas 👍");
+    log("Adicione manualmente ao arquivo:");
+    log(configPath);
+    log("\n[features]\nhooks = true\n");
+    return;
+  }
+
+  if (content.includes("[features]")) {
+    content = content.replace(
+      "[features]",
+      `[features]\nhooks = true`
+    );
+  } else {
+    content += `\n[features]\nhooks = true\n`;
+  }
+
+  fs.writeFileSync(configPath, content);
+
+  log("✅ Hooks habilitados com sucesso!");
 }
 
 main();
