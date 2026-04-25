@@ -49,18 +49,23 @@ function copyRecursive(src, dest) {
 
 function generateRandom(length) {
   const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    result += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return result;
+  return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 }
 
 function appendIfMissing(content, key, value) {
-  if (!content.includes(key)) {
+  if (!content.includes(`${key}=`)) {
     return content + `\n${key}=${value}`;
   }
   return content;
+}
+
+function getEnvValue(key) {
+  const envPath = path.join(projectRoot, ".env");
+  if (!fs.existsSync(envPath)) return null;
+
+  const content = fs.readFileSync(envPath, "utf-8");
+  const match = content.match(new RegExp(`${key}=(.*)`));
+  return match ? match[1].trim() : null;
 }
 
 // =========================
@@ -86,10 +91,6 @@ function createEnv() {
   content = appendIfMissing(content, "HOST_HTTP_PORT", "3000");
   content = appendIfMissing(content, "ASPNETCORE_ENVIRONMENT", "Development");
 
-  content = appendIfMissing(content, "BOOTSTRAP_ADMIN_TENANT_NOME", "Default");
-  content = appendIfMissing(content, "BOOTSTRAP_ADMIN_TENANT_EMAIL_CONTATO", "admin@maess.dev");
-  content = appendIfMissing(content, "BOOTSTRAP_ADMIN_TENANT_TELEFONE_CONTATO", "000000000");
-
   content = appendIfMissing(content, "BOOTSTRAP_ADMIN_USUARIO_EMAIL", "admin@maess.dev");
   content = appendIfMissing(content, "BOOTSTRAP_ADMIN_USUARIO_NOME", "Admin");
   content = appendIfMissing(content, "BOOTSTRAP_ADMIN_USUARIO_SECRET", generateRandom(16));
@@ -101,7 +102,7 @@ function createEnv() {
 }
 
 // =========================
-// Docker Setup
+// Docker
 // =========================
 function setupDocker() {
   const dockerSrc = path.join(__dirname, "../templates/docker");
@@ -124,7 +125,7 @@ function hasDocker() {
 function startDocker() {
   if (!hasDocker()) {
     log("❌ Docker não encontrado.");
-    log("👉 Instale o Docker Desktop e tente novamente.");
+    log("👉 Instale o Docker Desktop.");
     return;
   }
 
@@ -136,15 +137,15 @@ function startDocker() {
       { stdio: "inherit" }
     );
 
-    log("\n🎉 Maess Memory está rodando!");
+    log("\n🎉 Maess Memory rodando!");
     log("🌐 http://localhost:3000\n");
-  } catch (err) {
+  } catch {
     log("❌ Erro ao iniciar Docker.");
   }
 }
 
 // =========================
-// Codex Setup
+// Codex
 // =========================
 function setupCodex() {
   const hooksDest = path.join(projectRoot, ".codex/hooks");
@@ -165,10 +166,10 @@ function setupCodex() {
     const currentMode = fs.statSync(hookProbePath).mode;
     fs.chmodSync(hookProbePath, currentMode | 0o111);
   } catch {
-    log("⚠️ chmod ignorado (ok no Windows)");
+    log("⚠️ chmod ignorado (Windows)");
   }
 
-  log("✅ Hooks do Codex configurados!");
+  log("✅ Hooks configurados!");
 }
 
 // =========================
@@ -177,26 +178,35 @@ function setupCodex() {
 function findCodexConfig() {
   const home = os.homedir();
 
-  const paths = [
+  return [
     path.join(home, ".codex", "config.toml"),
     path.join(home, ".config", "codex", "config.toml"),
-  ];
-
-  return paths.find(p => fs.existsSync(p));
+  ].find(p => fs.existsSync(p));
 }
 
-function askQuestion(question) {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
+function ensureHooksEnabled(content) {
+  if (content.includes("hooks =")) {
+    return content.replace(/hooks\s*=\s*(true|false)/, "hooks = true");
+  }
 
-  return new Promise(resolve => {
-    rl.question(question, answer => {
-      rl.close();
-      resolve(answer.trim().toLowerCase());
-    });
-  });
+  if (content.includes("[features]")) {
+    return content.replace("[features]", `[features]\nhooks = true`);
+  }
+
+  return content + `\n[features]\nhooks = true\n`;
+}
+
+function ensureMcpServer(content, apiKey) {
+  if (content.includes("[mcp_servers.maess]")) {
+    return content;
+  }
+
+  return content + `
+[mcp_servers.maess]
+command = "npx"
+args = ["maess-memory", "mcp"]
+env = { MAESS_API_KEY = "${apiKey}" }
+`;
 }
 
 async function setupCodexConfig() {
@@ -204,40 +214,29 @@ async function setupCodexConfig() {
 
   if (!configPath) {
     log("⚠️ Codex não encontrado.");
-    log("👉 Configure manualmente ~/.codex/config.toml\n[features]\nhooks = true\n");
     return;
   }
 
   let content = fs.readFileSync(configPath, "utf-8");
 
-  if (content.includes("hooks = true")) {
-    log("✅ Hooks já ativos no Codex.");
-    return;
-  }
+  const apiKey = getEnvValue("BOOTSTRAP_ADMIN_USUARIO_APIKEY");
 
-  const answer = await askQuestion("Habilitar hooks automaticamente? (Y/n) ");
-
-  if (answer === "n") return;
-
-  if (content.includes("[features]")) {
-    content = content.replace("[features]", `[features]\nhooks = true`);
-  } else {
-    content += `\n[features]\nhooks = true\n`;
-  }
+  content = ensureHooksEnabled(content);
+  content = ensureMcpServer(content, apiKey);
 
   fs.writeFileSync(configPath, content);
 
-  log("✅ Hooks habilitados!");
+  log("✅ Codex configurado com MCP!");
 }
 
 // =========================
-// Validações
+// Validação
 // =========================
 function validateEnvironment() {
   try {
     execSync("python3 --version", { stdio: "ignore" });
   } catch {
-    log("⚠️ python3 não encontrado (hooks podem falhar)");
+    log("⚠️ python3 não encontrado");
   }
 }
 
@@ -262,19 +261,21 @@ function start() {
 }
 
 // =========================
-// Entry
+// Entry (CORRIGIDO)
 // =========================
-const command = process.argv[2];
+(async () => {
+  const command = process.argv[2];
 
-switch (command) {
-  case "init":
-    init();
-    break;
-  case "start":
-    start();
-    break;
-  default:
-    log("Uso:");
-    log("  npx maess-memory init");
-    log("  npx maess-memory start");
-}
+  switch (command) {
+    case "init":
+      await init();
+      break;
+    case "start":
+      start();
+      break;
+    default:
+      log("Uso:");
+      log("  npx maess-memory init");
+      log("  npx maess-memory start");
+  }
+})();
