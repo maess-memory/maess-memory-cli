@@ -19,10 +19,7 @@ services:
       start_period: 20s
 
   host:
-    build:
-      context: .
-      dockerfile: src/Maess.Memory.Presentation/Maess.Memory.Presentation.Host/Dockerfile
-      target: final
+    image: maess-memory:latest
     container_name: maess-memory-host
     restart: unless-stopped
     depends_on:
