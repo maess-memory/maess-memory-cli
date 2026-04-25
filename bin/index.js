@@ -262,15 +262,31 @@ function ensureHooksEnabled(content) {
 }
 
 function ensureMcpServer(content, apiKey) {
-  if (content.includes("[mcp_servers.maess-memory]")) {
-    return content;
+  const blockName = "[mcp_servers.maess-memory]";
+
+  if (content.includes(blockName)) {
+    // atualiza se já existir
+    return content.replace(
+      /\[mcp_servers\.maess-memory\][\s\S]*?(?=\n\[|$)/,
+      `[mcp_servers.maess-memory]
+enabled = true
+url = "http://127.0.0.1:3000/mcp"
+
+[mcp_servers.maess-memory.http_headers]
+ApiKey = "${apiKey}"
+`
+    );
   }
 
+  // adiciona novo
   return content + `
+
 [mcp_servers.maess-memory]
-command = "npx"
-args = ["maess-memory", "mcp"]
-env = { MAESS_API_KEY = "${apiKey}" }
+enabled = true
+url = "http://127.0.0.1:3000/mcp"
+
+[mcp_servers.maess-memory.http_headers]
+ApiKey = "${apiKey}"
 `;
 }
 
