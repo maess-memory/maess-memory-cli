@@ -4,7 +4,12 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { execSync } from "child_process";
+import readline from "node:readline";
+import os from "node:os";
 
+// =========================
+// Paths
+// =========================
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = process.cwd();
 
@@ -35,12 +40,27 @@ function copyRecursive(src, dest) {
     if (stat.isDirectory()) {
       copyRecursive(srcPath, destPath);
     } else {
-      // não sobrescreve se já existir
       if (!fs.existsSync(destPath)) {
         fs.copyFileSync(srcPath, destPath);
       }
     }
   }
+}
+
+function generateRandom(length) {
+  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return result;
+}
+
+function appendIfMissing(content, key, value) {
+  if (!content.includes(key)) {
+    return content + `\n${key}=${value}`;
+  }
+  return content;
 }
 
 // =========================
@@ -49,22 +69,78 @@ function copyRecursive(src, dest) {
 function createEnv() {
   const envPath = path.join(projectRoot, ".env");
 
-  let content = "";
-  if (fs.existsSync(envPath)) {
-    content = fs.readFileSync(envPath, "utf-8");
-  }
+  let content = fs.existsSync(envPath)
+    ? fs.readFileSync(envPath, "utf-8")
+    : "";
 
   const projectName = path.basename(projectRoot);
 
-  if (!content.includes("MAESS_MEMORY_SYSTEM_NAME")) {
-    content += `\nMAESS_MEMORY_SYSTEM_NAME=${projectName}`;
-  }
+  content = appendIfMissing(content, "MAESS_MEMORY_SYSTEM_NAME", projectName);
+  content = appendIfMissing(content, "MAESS_MEMORY_AMBIENTE", "dev");
 
-  if (!content.includes("MAESS_MEMORY_AMBIENTE")) {
-    content += `\nMAESS_MEMORY_AMBIENTE=dev`;
-  }
+  content = appendIfMissing(content, "MONGO_PORT", "27017");
+  content = appendIfMissing(content, "MONGO_INITDB_ROOT_USERNAME", "maess");
+  content = appendIfMissing(content, "MONGO_INITDB_ROOT_PASSWORD", generateRandom(12));
+  content = appendIfMissing(content, "MONGO_DATABASE", "maess_memory");
+
+  content = appendIfMissing(content, "HOST_HTTP_PORT", "3000");
+  content = appendIfMissing(content, "ASPNETCORE_ENVIRONMENT", "Development");
+
+  content = appendIfMissing(content, "BOOTSTRAP_ADMIN_TENANT_NOME", "Default");
+  content = appendIfMissing(content, "BOOTSTRAP_ADMIN_TENANT_EMAIL_CONTATO", "admin@maess.dev");
+  content = appendIfMissing(content, "BOOTSTRAP_ADMIN_TENANT_TELEFONE_CONTATO", "000000000");
+
+  content = appendIfMissing(content, "BOOTSTRAP_ADMIN_USUARIO_EMAIL", "admin@maess.dev");
+  content = appendIfMissing(content, "BOOTSTRAP_ADMIN_USUARIO_NOME", "Admin");
+  content = appendIfMissing(content, "BOOTSTRAP_ADMIN_USUARIO_SECRET", generateRandom(16));
+  content = appendIfMissing(content, "BOOTSTRAP_ADMIN_USUARIO_APIKEY", generateRandom(24));
 
   fs.writeFileSync(envPath, content.trim() + "\n");
+
+  log("✅ .env configurado!");
+}
+
+// =========================
+// Docker Setup
+// =========================
+function setupDocker() {
+  const dockerSrc = path.join(__dirname, "../templates/docker");
+  const dockerDest = path.join(projectRoot, ".maess");
+
+  log("🐳 Configurando Docker...");
+  copyRecursive(dockerSrc, dockerDest);
+  log("✅ Docker configurado!");
+}
+
+function hasDocker() {
+  try {
+    execSync("docker --version", { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function startDocker() {
+  if (!hasDocker()) {
+    log("❌ Docker não encontrado.");
+    log("👉 Instale o Docker Desktop e tente novamente.");
+    return;
+  }
+
+  try {
+    log("🚀 Iniciando Maess Memory...\n");
+
+    execSync(
+      "docker compose -f .maess/docker-compose.maess.yml up -d",
+      { stdio: "inherit" }
+    );
+
+    log("\n🎉 Maess Memory está rodando!");
+    log("🌐 http://localhost:3000\n");
+  } catch (err) {
+    log("❌ Erro ao iniciar Docker.");
+  }
 }
 
 // =========================
@@ -82,67 +158,31 @@ function setupCodex() {
   ensureDir(path.join(projectRoot, ".codex"));
   copyRecursive(hooksSrc, hooksDest);
 
-  // sempre sobrescreve o hooks.json (controle centralizado)
   fs.copyFileSync(hooksConfigSrc, hooksConfigDest);
 
-  // garantir permissão no shell script
   try {
     const hookProbePath = path.join(hooksDest, "hook_probe.sh");
     const currentMode = fs.statSync(hookProbePath).mode;
     fs.chmodSync(hookProbePath, currentMode | 0o111);
   } catch {
-    log("⚠️ Não foi possível aplicar chmod automaticamente (ok no Windows)");
+    log("⚠️ chmod ignorado (ok no Windows)");
   }
 
   log("✅ Hooks do Codex configurados!");
 }
 
 // =========================
-// Validações
+// Codex Config
 // =========================
-function validateEnvironment() {
-  try {
-    execSync("python3 --version", { stdio: "ignore" });
-  } catch {
-    log("⚠️ python3 não encontrado. Os hooks podem não funcionar.");
-  }
-}
-
-// =========================
-// Main
-// =========================
-function main() {
-  log("🚀 Configurando Maess Memory...\n");
-
-  validateEnvironment();
-  createEnv();
-  setupCodex();
-
-  return setupCodexConfig().then(() => {
-    log("\n🎉 Configuração concluída com sucesso!");
-    log("");
-    log("Próximos passos:");
-    log("1. Abra o projeto no Codex");
-    log("2. Comece a usar normalmente");
-    log("3. A memória já estará ativa automaticamente");
-  });
-}
-
-// =========================
-// Codex Config (hooks=true)
-// =========================
-import readline from "node:readline";
-import os from "node:os";
-
 function findCodexConfig() {
   const home = os.homedir();
 
-  const possiblePaths = [
+  const paths = [
     path.join(home, ".codex", "config.toml"),
     path.join(home, ".config", "codex", "config.toml"),
   ];
 
-  return possiblePaths.find(p => fs.existsSync(p));
+  return paths.find(p => fs.existsSync(p));
 }
 
 function askQuestion(question) {
@@ -160,59 +200,81 @@ function askQuestion(question) {
 }
 
 async function setupCodexConfig() {
-  log("\n🔧 Verificando configuração do Codex...");
-
   const configPath = findCodexConfig();
 
   if (!configPath) {
-    log("⚠️ Não encontramos o config.toml do Codex.");
-    log("👉 Configure manualmente:");
-    log("~/.codex/config.toml");
-    log("\nAdicione:");
-    log("[features]");
-    log("hooks = true\n");
+    log("⚠️ Codex não encontrado.");
+    log("👉 Configure manualmente ~/.codex/config.toml\n[features]\nhooks = true\n");
     return;
   }
 
   let content = fs.readFileSync(configPath, "utf-8");
 
   if (content.includes("hooks = true")) {
-    log("✅ Hooks já estão habilitados no Codex.");
+    log("✅ Hooks já ativos no Codex.");
     return;
   }
 
-  log(`Arquivo encontrado: ${configPath}\n`);
+  const answer = await askQuestion("Habilitar hooks automaticamente? (Y/n) ");
 
-  log("Para ativar memória automática, precisamos habilitar hooks.");
-  log("Isso irá adicionar:\n");
-  log("[features]");
-  log("hooks = true\n");
-
-  const answer = await askQuestion("Deseja aplicar automaticamente? (Y/n) ");
-
-  if (answer === "n") {
-    log("\nSem problemas 👍");
-    log("Adicione manualmente ao arquivo:");
-    log(configPath);
-    log("\n[features]\nhooks = true\n");
-    return;
-  }
+  if (answer === "n") return;
 
   if (content.includes("[features]")) {
-    content = content.replace(
-      "[features]",
-      `[features]\nhooks = true`
-    );
+    content = content.replace("[features]", `[features]\nhooks = true`);
   } else {
     content += `\n[features]\nhooks = true\n`;
   }
 
   fs.writeFileSync(configPath, content);
 
-  log("✅ Hooks habilitados com sucesso!");
+  log("✅ Hooks habilitados!");
 }
 
-main().catch(error => {
-  log(`❌ Erro ao configurar Maess Memory: ${error.message}`);
-  process.exitCode = 1;
-});
+// =========================
+// Validações
+// =========================
+function validateEnvironment() {
+  try {
+    execSync("python3 --version", { stdio: "ignore" });
+  } catch {
+    log("⚠️ python3 não encontrado (hooks podem falhar)");
+  }
+}
+
+// =========================
+// CLI
+// =========================
+async function init() {
+  log("🚀 Configurando Maess Memory...\n");
+
+  validateEnvironment();
+  createEnv();
+  setupDocker();
+  setupCodex();
+  await setupCodexConfig();
+
+  log("\n🎉 Setup concluído!");
+  log("👉 Rode: npx maess-memory start\n");
+}
+
+function start() {
+  startDocker();
+}
+
+// =========================
+// Entry
+// =========================
+const command = process.argv[2];
+
+switch (command) {
+  case "init":
+    init();
+    break;
+  case "start":
+    start();
+    break;
+  default:
+    log("Uso:");
+    log("  npx maess-memory init");
+    log("  npx maess-memory start");
+}
