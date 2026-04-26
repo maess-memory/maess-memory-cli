@@ -6,7 +6,7 @@ Ele captura, organiza e reutiliza conhecimento automaticamente — sem você pre
 
 ---
 
-## ⚡ Teste em 1 minuto (Aha moment)
+## ⚡ Teste em 1 minuto
 
 ### 1. Instale
 
@@ -136,15 +136,6 @@ Com Maess Memory:
 - o agente lembra
 - decisões são reutilizadas
 - respostas evoluem com o projeto
-
----
-
-## 🎥 Vídeo rápido (1 minuto)
-
-> Adicione aqui um vídeo curto mostrando:
-> init → start → prompts → painel
-
----
 
 ## 🧠 Conceito
 
