@@ -32,7 +32,7 @@ services:
       start_period: 20s
 
   host:
-    image: maess-memory:latest
+    image: ghcr.io/maess-memory/core:latest
     container_name: maess-memory-host
     restart: unless-stopped
     depends_on:
