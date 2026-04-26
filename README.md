@@ -1,50 +1,182 @@
-# maess-memory-cli
+# 🧠 Maess Memory CLI
 
-Maess Memory é uma camada de memória externa para agentes de IA. Ele captura, consolida e recupera conhecimento útil com contexto de tenant, organização, usuário, tarefa e origem.
+Maess Memory é uma camada de memória externa para agentes de IA.
 
-Este pacote é o CLI para usar e administrar o Maess Memory na sua máquina local. Com ele, você prepara o projeto, sobe o ambiente e instala a integração com o Codex usando o comando `maess`.
+Ele captura, organiza e reutiliza conhecimento automaticamente — sem você precisar repetir contexto a cada interação.
 
-## Instalar
+---
 
-No diretório do projeto onde você quer usar o Maess Memory:
+## ⚡ Teste em 1 minuto (Aha moment)
+
+### 1. Instale
 
 ```bash
 npm i @maess-systems/memory-cli
 ```
 
-## Começar
+---
 
-Rode o comando na raiz do projeto:
+### 2. Configure
 
 ```bash
 npx maess init
 ```
 
-Depois, para subir o ambiente:
+---
+
+### 3. Suba o ambiente
 
 ```bash
 npx maess start
 ```
 
-## Comandos mais usados
+---
+
+### 4. Teste a memória
+
+👉 Prompt 1 — registrar memória:
+
+Estou iniciando um projeto chamado "Sistema de Gestão de Sinistros".
+
+Decisão importante:
+- Backend será .NET com arquitetura DDD + Hexagonal
+- Banco de dados MongoDB
+- Multi-tenant obrigatório
+
+Registre isso como uma memória técnica de longo prazo.
+
+---
+
+👉 Prompt 2 — recuperar memória:
+
+Quais decisões técnicas já foram registradas para o sistema de gestão de sinistros?
+
+---
+
+👉 Prompt 3 — usar memória automaticamente:
+
+Sugira arquitetura para meu projeto
+
+---
+
+💡 O sistema vai lembrar automaticamente do contexto e responder com base nisso.
+
+---
+
+### 5. Veja a memória persistida
+
+Abra:
+
+http://localhost:3000
+
+---
+
+### 6. Acesso ao sistema
+
+As credenciais de acesso são geradas automaticamente no arquivo `.env` durante o `init`.
+
+Use:
+
+- **Usuário:** `BOOTSTRAP_ADMIN_USUARIO_EMAIL`
+- **Senha:** `BOOTSTRAP_ADMIN_USUARIO_SECRET`
+
+💡 Esses valores ficam disponíveis no arquivo `.env` na raiz do projeto.
+
+---
+
+## 🧠 O que está acontecendo
+
+- Memórias são capturadas automaticamente via hooks
+- O sistema recupera contexto relevante em cada prompt
+- O modelo responde considerando histórico real
+- Tudo fica persistido e auditável
+
+---
+
+## 🚀 Comandos principais
 
 ```bash
 npx maess init
 npx maess start
-npx maess up
-npx maess stop
-npx maess restart
-npx maess down
 npx maess status
 npx maess logs
 ```
 
-## O que acontece
+---
 
-- cria ou atualiza o arquivo `.env`;
-- instala os hooks do Codex em `.codex/`;
-- deixa o projeto pronto para usar o Maess Memory localmente.
+## 🔧 Comandos avançados
 
-## Dica rápida
+```bash
+npx maess stop
+npx maess restart
+npx maess down
+```
 
-Se quiser, o pacote também responde a `npx maess-memory`, mas o caminho recomendado é `npx maess`.
+---
+
+## ⚙️ O que o `init` faz
+
+- cria ou atualiza `.env`
+- instala hooks do Codex (`.codex/`)
+- prepara integração com MCP
+- deixa o projeto pronto para usar memória
+
+---
+
+## 💡 Por que usar
+
+Sem Maess Memory:
+
+- você repete contexto
+- perde decisões
+- respostas são genéricas
+
+Com Maess Memory:
+
+- o agente lembra
+- decisões são reutilizadas
+- respostas evoluem com o projeto
+
+---
+
+## 🎥 Vídeo rápido (1 minuto)
+
+> Adicione aqui um vídeo curto mostrando:
+> init → start → prompts → painel
+
+---
+
+## 🧠 Conceito
+
+Maess Memory não é só armazenamento.
+
+É uma **infra de memória contextual para agentes**:
+
+- multi-tenant  
+- orientado a contexto  
+- auditável  
+- pronto para escalar  
+
+---
+
+## 💡 Dica
+
+Você também pode usar:
+
+```bash
+npx maess-memory
+```
+
+Mas o recomendado é:
+
+```bash
+npx maess
+```
+
+---
+
+## 🚀 Próximos passos
+
+- suporte a múltiplos usuários  
+- planos com funcionalidades avançadas  
+- versão cloud (sem necessidade de infra local)
