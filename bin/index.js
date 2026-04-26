@@ -342,16 +342,25 @@ function start() {
 }
 
 function printUsage() {
-  log("Uso:");
-  log("  maess init | maess-memory init");
-  log("  maess start | maess-memory start");
-  log("  maess up | maess-memory up");
-  log("  maess stop | maess-memory stop");
-  log("  maess restart | maess-memory restart");
-  log("  maess down | maess-memory down");
-  log("  maess status | maess-memory status");
-  log("  maess logs [args...] | maess-memory logs [args...]");
-  log("  maess help | maess-memory help");
+  log("🧠 Maess Memory CLI");
+  log("");
+  log("Comandos:");
+  log("");
+  log("  init      Configura hooks e MCP server");
+  log("  start     Sobe o ambiente");
+  log("  status    Mostra o estado atual");
+  log("  logs      Exibe logs (ex: maess logs host)");
+  log("");
+  log("  stop      Para o ambiente");
+  log("  restart   Reinicia o ambiente");
+  log("  down      Remove tudo");
+  log("");
+  log("💡 Comece com:");
+  log("  npx maess init");
+  log("  npx maess start");
+  log("");
+  log("🚀 Fluxo recomendado:");
+  log("  maess init → maess start → maess status");
 }
 
 // =========================
