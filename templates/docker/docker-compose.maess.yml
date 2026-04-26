@@ -32,7 +32,7 @@ services:
       start_period: 20s
 
   host:
-    image: ghcr.io/maess-memory/core:latest
+    image: maess-memory:latest
     container_name: maess-memory-host
     restart: unless-stopped
     depends_on:
@@ -44,6 +44,7 @@ services:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
       MongoDb__ConnectionString: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/?authSource=admin
       MongoDb__DatabaseName: ${MONGO_DATABASE}
+      JwtAuth__SigningKey: ${JWT_AUTH_SIGNING_KEY:?Defina JWT_AUTH_SIGNING_KEY no .env local antes de subir o host.}
       DataProtection__ApplicationName: ${DATA_PROTECTION_APPLICATION_NAME:-Maess.Memory.Presentation.Host}
       DataProtection__KeysPath: ${DATA_PROTECTION_KEYS_PATH:-/var/lib/maess-memory/data-protection-keys}
       DataProtection__CertificatePath: ${DATA_PROTECTION_CERTIFICATE_PATH:-}
@@ -59,21 +60,7 @@ services:
       MAESS_PLAN: ${MAESS_PLAN}
     volumes:
       - data_protection_keys:${DATA_PROTECTION_KEYS_PATH:-/var/lib/maess-memory/data-protection-keys}
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "python3",
-          "-c",
-          "import urllib.request;
-            urllib.request.urlopen('http://127.0.0.1:8080/health',
-            timeout=5).read()",
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-
+      
 volumes:
   mongodb_data:
   data_protection_keys:

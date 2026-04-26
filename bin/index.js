@@ -95,6 +95,7 @@ function createEnv() {
   content = appendIfMissing(content, "BOOTSTRAP_ADMIN_USUARIO_NOME", "Admin");
   content = appendIfMissing(content, "BOOTSTRAP_ADMIN_USUARIO_SECRET", generateRandom(16));
   content = appendIfMissing(content, "BOOTSTRAP_ADMIN_USUARIO_APIKEY", generateRandom(24));
+  content = appendIfMissing(content, "JWT_AUTH_SIGNING_KEY", generateRandom(64));
 
   content = appendIfMissing(content, "BOOTSTRAP_ADMIN_TENANT_NOME", "maess");
   content = appendIfMissing(content, "BOOTSTRAP_ADMIN_TENANT_EMAIL_CONTATO", "admin@maess.dev");
