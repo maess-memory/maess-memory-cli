@@ -157,8 +157,10 @@ function runDockerCompose(args, successMessage, errorMessage, options = {}) {
 
 function startDocker() {
   log("🚀 Iniciando Maess Memory...\n");
+  log("🔄 Verificando atualizações...");
+  
   runDockerCompose(
-    "up -d",
+    "up -d --pull always --force-recreate",
     "🎉 Maess Memory rodando!\n🌐 http://localhost:3000",
     "❌ Erro ao iniciar Docker."
   );
