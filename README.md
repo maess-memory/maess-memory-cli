@@ -4,6 +4,9 @@ Maess Memory é uma camada de memória externa para agentes de IA.
 
 Ele captura, organiza e reutiliza conhecimento automaticamente — sem você precisar repetir contexto a cada interação.
 
+Repositório do projeto:
+https://github.com/maess-memory/maess-memory-cli
+
 ---
 
 ## ⚡ Teste em 1 minuto
@@ -100,6 +103,8 @@ npx maess init
 npx maess start
 npx maess status
 npx maess logs
+npx maess clear-config
+npx maess uninstall
 ```
 
 ---
@@ -107,6 +112,8 @@ npx maess logs
 ## 🔧 Comandos avançados
 
 ```bash
+npx maess clear-config
+npx maess uninstall
 npx maess stop
 npx maess restart
 npx maess down
@@ -120,6 +127,37 @@ npx maess down
 - instala hooks do Codex (`.codex/`)
 - prepara integração com MCP
 - deixa o projeto pronto para usar memória
+
+## 🧹 Como limpar a configuração do Codex
+
+Se quiser remover do `~/.codex/config.toml` tudo o que o Maess Memory adicionou, rode:
+
+```bash
+npx maess clear-config
+```
+
+Esse comando remove:
+
+- a ativação de `hooks` adicionada pelo CLI
+- o bloco `mcp_servers.maess-memory`
+
+Ele não remove os arquivos locais do projeto, como `.codex/`, `.env` ou `.maess/`.
+
+## 🗑️ Como desinstalar do projeto
+
+Se quiser desfazer o setup completo do projeto, rode:
+
+```bash
+npx maess uninstall
+```
+
+Esse comando:
+
+- executa `docker compose down -v` da stack do Maess Memory, quando `.maess/` existe
+- remove do `~/.codex/config.toml` os blocos gerenciados pelo Maess Memory
+- remove `.codex/hooks`, `.codex/hooks.json` e tenta limpar `.codex/` se ele ficar vazio
+- remove o diretório `.maess/`
+- remove do `.env` apenas as chaves adicionadas pelo `init`
 
 ---
 

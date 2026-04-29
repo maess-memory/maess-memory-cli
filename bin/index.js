@@ -47,6 +47,38 @@ function copyRecursive(src, dest) {
   }
 }
 
+function removePathIfExists(targetPath) {
+  if (!fs.existsSync(targetPath)) {
+    return false;
+  }
+
+  fs.rmSync(targetPath, { recursive: true, force: true });
+  return true;
+}
+
+function removeFileIfExists(targetPath) {
+  if (!fs.existsSync(targetPath)) {
+    return false;
+  }
+
+  fs.unlinkSync(targetPath);
+  return true;
+}
+
+function removeDirIfEmpty(targetPath) {
+  if (!fs.existsSync(targetPath)) {
+    return;
+  }
+
+  if (!fs.lstatSync(targetPath).isDirectory()) {
+    return;
+  }
+
+  if (fs.readdirSync(targetPath).length === 0) {
+    fs.rmdirSync(targetPath);
+  }
+}
+
 function generateRandom(length) {
   const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
@@ -109,6 +141,60 @@ function createEnv() {
   log("✅ .env configurado!");
 }
 
+const MAESS_ENV_KEYS = [
+  "MAESS_MEMORY_SYSTEM_NAME",
+  "MAESS_MEMORY_AMBIENTE",
+  "MONGO_PORT",
+  "MONGO_INITDB_ROOT_USERNAME",
+  "MONGO_INITDB_ROOT_PASSWORD",
+  "MONGO_DATABASE",
+  "HOST_HTTP_PORT",
+  "ASPNETCORE_ENVIRONMENT",
+  "BOOTSTRAP_ADMIN_USUARIO_EMAIL",
+  "BOOTSTRAP_ADMIN_USUARIO_NOME",
+  "BOOTSTRAP_ADMIN_USUARIO_SECRET",
+  "BOOTSTRAP_ADMIN_USUARIO_APIKEY",
+  "JWT_AUTH_SIGNING_KEY",
+  "BOOTSTRAP_ADMIN_TENANT_NOME",
+  "BOOTSTRAP_ADMIN_TENANT_EMAIL_CONTATO",
+  "BOOTSTRAP_ADMIN_TENANT_TELEFONE_CONTATO",
+  "MAESS_ENV",
+  "MAESS_PLAN",
+];
+
+function removeManagedEnvEntries() {
+  const envPath = path.join(projectRoot, ".env");
+
+  if (!fs.existsSync(envPath)) {
+    log("ℹ️ .env não encontrado, nada para limpar.");
+    return;
+  }
+
+  const content = fs.readFileSync(envPath, "utf-8");
+  const lines = content.split(/\r?\n/);
+  const filteredLines = lines.filter(line => {
+    const trimmed = line.trim();
+
+    if (!trimmed || trimmed.startsWith("#")) {
+      return true;
+    }
+
+    const [key] = trimmed.split("=", 1);
+    return !MAESS_ENV_KEYS.includes(key);
+  });
+
+  const cleanedContent = filteredLines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+
+  if (!cleanedContent) {
+    fs.unlinkSync(envPath);
+    log("✅ .env removido.");
+    return;
+  }
+
+  fs.writeFileSync(envPath, `${cleanedContent}\n`);
+  log("✅ Entradas do Maess Memory removidas do .env!");
+}
+
 // =========================
 // Docker
 // =========================
@@ -119,6 +205,17 @@ function setupDocker() {
   log("🐳 Configurando Docker...");
   copyRecursive(dockerSrc, dockerDest);
   log("✅ Docker configurado!");
+}
+
+function removeDockerFiles() {
+  const dockerDir = path.join(projectRoot, ".maess");
+
+  if (removePathIfExists(dockerDir)) {
+    log("✅ Arquivos do Docker removidos do projeto.");
+    return;
+  }
+
+  log("ℹ️ Diretório .maess não encontrado.");
 }
 
 function hasDocker() {
@@ -240,6 +337,24 @@ function setupCodex() {
   log("✅ Hooks configurados!");
 }
 
+function removeCodexProjectFiles() {
+  const codexRoot = path.join(projectRoot, ".codex");
+  const hooksDir = path.join(codexRoot, "hooks");
+  const hooksConfigPath = path.join(codexRoot, "hooks.json");
+
+  const removedHooks = removePathIfExists(hooksDir);
+  const removedHooksConfig = removeFileIfExists(hooksConfigPath);
+
+  removeDirIfEmpty(codexRoot);
+
+  if (removedHooks || removedHooksConfig) {
+    log("✅ Arquivos do Codex removidos do projeto.");
+    return;
+  }
+
+  log("ℹ️ Arquivos do Codex não encontrados no projeto.");
+}
+
 // =========================
 // Codex Config
 // =========================
@@ -252,45 +367,108 @@ function findCodexConfig() {
   ].find(p => fs.existsSync(p));
 }
 
+const MAESS_HOOKS_START = "# >>> Maess Memory Hooks";
+const MAESS_HOOKS_END = "# <<< Maess Memory Hooks";
+const MAESS_MCP_START = "# >>> Maess Memory MCP";
+const MAESS_MCP_END = "# <<< Maess Memory MCP";
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function stripManagedBlock(content, startMarker, endMarker) {
+  const start = escapeRegExp(startMarker);
+  const end = escapeRegExp(endMarker);
+  const blockRegex = new RegExp(`\\n?${start}[\\s\\S]*?${end}\\n?`, "g");
+  return content.replace(blockRegex, "\n");
+}
+
+function removeTomlTable(content, tableName) {
+  const table = escapeRegExp(tableName);
+  const tableRegex = new RegExp(`\\n?${table}\\n[\\s\\S]*?(?=\\n\\[[^\\n]+\\]|$)`, "g");
+  return content.replace(tableRegex, "\n");
+}
+
+function cleanupTomlSpacing(content) {
+  return content
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]+\n/g, "\n")
+    .trim() + "\n";
+}
+
+function upsertFeaturesSection(content, transformSection) {
+  const featuresRegex = /\[features\]\n[\s\S]*?(?=\n\[[^\n]+\]|$)/;
+  const match = content.match(featuresRegex);
+
+  if (match) {
+    const currentSection = match[0];
+    const updatedSection = transformSection(currentSection);
+
+    if (!updatedSection.trim()) {
+      return cleanupTomlSpacing(content.replace(currentSection, "\n"));
+    }
+
+    return cleanupTomlSpacing(content.replace(currentSection, updatedSection));
+  }
+
+  const newSection = transformSection("[features]\n");
+  if (!newSection.trim()) {
+    return cleanupTomlSpacing(content);
+  }
+
+  return cleanupTomlSpacing(`${content.trim()}\n\n${newSection}`);
+}
+
 function ensureHooksEnabled(content) {
-  if (content.includes("hooks =")) {
-    return content.replace(/hooks\s*=\s*(true|false)/, "hooks = true");
-  }
+  const managedHooksBlock = `${MAESS_HOOKS_START}\nhooks = true\n${MAESS_HOOKS_END}`;
 
-  if (content.includes("[features]")) {
-    return content.replace("[features]", `[features]\nhooks = true`);
-  }
+  return upsertFeaturesSection(content, section => {
+    let normalizedSection = stripManagedBlock(section, MAESS_HOOKS_START, MAESS_HOOKS_END);
+    normalizedSection = normalizedSection.replace(/(^|\n)hooks\s*=\s*(true|false)\s*(?=\n|$)/g, "$1");
+    normalizedSection = normalizedSection.replace(/\n{3,}/g, "\n\n").trimEnd();
+    normalizedSection = normalizedSection.replace(/\[features\]\n+/g, "[features]\n");
 
-  return content + `\n[features]\nhooks = true\n`;
+    if (normalizedSection === "[features]") {
+      return `${normalizedSection}\n${managedHooksBlock}\n`;
+    }
+
+    return `${normalizedSection}\n${managedHooksBlock}\n`;
+  });
+}
+
+function disableHooks(content) {
+  return upsertFeaturesSection(content, section => {
+    let normalizedSection = stripManagedBlock(section, MAESS_HOOKS_START, MAESS_HOOKS_END);
+    normalizedSection = normalizedSection.replace(/(^|\n)hooks\s*=\s*true\s*(?=\n|$)/g, "$1");
+    normalizedSection = normalizedSection.replace(/\n{3,}/g, "\n\n").trim();
+    normalizedSection = normalizedSection.replace(/\[features\]\n+/g, "[features]\n");
+
+    return normalizedSection === "[features]" ? "" : `${normalizedSection}\n`;
+  });
 }
 
 function ensureMcpServer(content, apiKey) {
-  const blockName = "[mcp_servers.maess-memory]";
-
-  if (content.includes(blockName)) {
-    // atualiza se já existir
-    return content.replace(
-      /\[mcp_servers\.maess-memory\][\s\S]*?(?=\n\[|$)/,
-      `[mcp_servers.maess-memory]
-enabled = true
-url = "http://127.0.0.1:3000/mcp"
-
-[mcp_servers.maess-memory.http_headers]
-ApiKey = "${apiKey}"
-`
-    );
-  }
-
-  // adiciona novo
-  return content + `
-
+  const managedMcpBlock = `${MAESS_MCP_START}
 [mcp_servers.maess-memory]
 enabled = true
 url = "http://127.0.0.1:3000/mcp"
 
 [mcp_servers.maess-memory.http_headers]
 ApiKey = "${apiKey}"
-`;
+${MAESS_MCP_END}`;
+
+  let normalizedContent = stripManagedBlock(content, MAESS_MCP_START, MAESS_MCP_END);
+  normalizedContent = removeTomlTable(normalizedContent, "[mcp_servers.maess-memory.http_headers]");
+  normalizedContent = removeTomlTable(normalizedContent, "[mcp_servers.maess-memory]");
+
+  return cleanupTomlSpacing(`${normalizedContent.trim()}\n\n${managedMcpBlock}`);
+}
+
+function removeMcpServer(content) {
+  let normalizedContent = stripManagedBlock(content, MAESS_MCP_START, MAESS_MCP_END);
+  normalizedContent = removeTomlTable(normalizedContent, "[mcp_servers.maess-memory.http_headers]");
+  normalizedContent = removeTomlTable(normalizedContent, "[mcp_servers.maess-memory]");
+  return cleanupTomlSpacing(normalizedContent);
 }
 
 async function setupCodexConfig() {
@@ -311,6 +489,23 @@ async function setupCodexConfig() {
   fs.writeFileSync(configPath, content);
 
   log("✅ Codex configurado com MCP!");
+}
+
+async function clearCodexConfig() {
+  const configPath = findCodexConfig();
+
+  if (!configPath) {
+    log("⚠️ Codex não encontrado.");
+    return;
+  }
+
+  let content = fs.readFileSync(configPath, "utf-8");
+  content = disableHooks(content);
+  content = removeMcpServer(content);
+
+  fs.writeFileSync(configPath, content);
+
+  log("✅ Configurações do Maess Memory removidas do Codex!");
 }
 
 // =========================
@@ -344,12 +539,36 @@ function start() {
   startDocker();
 }
 
+async function clearConfig() {
+  log("🧹 Removendo configurações do Maess Memory do Codex...\n");
+  await clearCodexConfig();
+}
+
+async function uninstall() {
+  log("🧹 Desinstalando Maess Memory deste projeto...\n");
+
+  const dockerComposePath = path.join(projectRoot, ".maess", "docker-compose.maess.yml");
+  if (fs.existsSync(dockerComposePath)) {
+    downDocker();
+    log("");
+  }
+
+  await clearCodexConfig();
+  removeCodexProjectFiles();
+  removeDockerFiles();
+  removeManagedEnvEntries();
+
+  log("\n✅ Desinstalação concluída!");
+}
+
 function printUsage() {
   log("🧠 Maess Memory CLI");
   log("");
   log("Comandos:");
   log("");
   log("  init      Configura hooks e MCP server");
+  log("  clear-config  Remove hooks e MCP server do config.toml do Codex");
+  log("  uninstall  Remove configuração global e arquivos locais do projeto");
   log("  start     Sobe o ambiente");
   log("  status    Mostra o estado atual");
   log("  logs      Exibe logs (ex: maess logs host)");
@@ -379,6 +598,14 @@ function printUsage() {
     case "start":
     case "up":
       start();
+      break;
+    case "clear-config":
+    case "remove-config":
+      await clearConfig();
+      break;
+    case "uninstall":
+    case "remove":
+      await uninstall();
       break;
     case "stop":
       stopDocker();

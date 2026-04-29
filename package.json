@@ -2,6 +2,14 @@
   "name": "@maess-systems/memory-cli",
   "version": "0.1.27",
   "description": "CLI to configure Maess Memory hooks and project metadata.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maess-memory/maess-memory-cli.git"
+  },
+  "homepage": "https://github.com/maess-memory/maess-memory-cli#readme",
+  "bugs": {
+    "url": "https://github.com/maess-memory/maess-memory-cli/issues"
+  },
   "keywords": [
     "codex",
     "cli",
