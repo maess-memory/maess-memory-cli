@@ -151,6 +151,8 @@ Se quiser desfazer o setup completo do projeto, rode:
 npx maess uninstall
 ```
 
+Esse é o comando recomendado quando você terminou um estudo, prova de conceito ou teste local e quer deixar o ambiente limpo, sem referências do Maess Memory no projeto e no Codex.
+
 Esse comando:
 
 - executa `docker compose down -v` da stack do Maess Memory, quando `.maess/` existe
@@ -158,6 +160,8 @@ Esse comando:
 - remove `.codex/hooks`, `.codex/hooks.json` e tenta limpar `.codex/` se ele ficar vazio
 - remove o diretório `.maess/`
 - remove do `.env` apenas as chaves adicionadas pelo `init`
+
+Depois do `uninstall`, o projeto volta a ficar sem hooks, sem MCP server configurado pelo Maess Memory e sem os arquivos locais gerados pelo setup.
 
 ---
 
