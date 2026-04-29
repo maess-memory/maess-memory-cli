@@ -137,6 +137,8 @@ Se Docker ou Codex não estiverem instalados, o comando `npx maess init` interro
 
 Se o arquivo `~/.codex/config.toml` ainda não existir, o `init` cria esse arquivo automaticamente antes de aplicar a configuração.
 
+Ao executar `npx maess start`, o CLI também valida se a porta HTTP configurada em `HOST_HTTP_PORT` está livre antes de subir a stack.
+
 ## 🧹 Como limpar a configuração do Codex
 
 Se quiser remover do `~/.codex/config.toml` tudo o que o Maess Memory adicionou, rode:
@@ -171,6 +173,13 @@ Esse comando:
 - remove do `.env` apenas as chaves adicionadas pelo `init`
 
 Depois do `uninstall`, o projeto volta a ficar sem hooks, sem MCP server configurado pelo Maess Memory e sem os arquivos locais gerados pelo setup.
+
+## 🔌 Portas usadas
+
+- o host da aplicação usa `HOST_HTTP_PORT`, que por padrão é `3000`
+- o MongoDB não é exposto para a máquina local; ele fica disponível apenas na rede interna do Docker Compose
+
+Se a porta `3000` já estiver em uso, altere `HOST_HTTP_PORT` no `.env` antes de rodar `npx maess start`.
 
 ---
 

@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import { execSync } from "child_process";
 import readline from "node:readline";
 import os from "node:os";
+import net from "node:net";
 
 // =========================
 // Paths
@@ -100,6 +101,36 @@ function getEnvValue(key) {
   return match ? match[1].trim() : null;
 }
 
+function getHostHttpPort() {
+  return getEnvValue("HOST_HTTP_PORT") || "3000";
+}
+
+function isValidPort(port) {
+  const portNumber = Number(port);
+  return Number.isInteger(portNumber) && portNumber >= 1 && portNumber <= 65535;
+}
+
+function isPortAvailable(port) {
+  return new Promise(resolve => {
+    const server = net.createServer();
+
+    server.once("error", error => {
+      if (error.code === "EADDRINUSE") {
+        resolve(false);
+        return;
+      }
+
+      resolve(true);
+    });
+
+    server.once("listening", () => {
+      server.close(() => resolve(true));
+    });
+
+    server.listen(Number(port), "127.0.0.1");
+  });
+}
+
 // =========================
 // .env
 // =========================
@@ -115,7 +146,6 @@ function createEnv() {
   content = appendIfMissing(content, "MAESS_MEMORY_SYSTEM_NAME", projectName);
   content = appendIfMissing(content, "MAESS_MEMORY_AMBIENTE", "dev");
 
-  content = appendIfMissing(content, "MONGO_PORT", "27017");
   content = appendIfMissing(content, "MONGO_INITDB_ROOT_USERNAME", "maess");
   content = appendIfMissing(content, "MONGO_INITDB_ROOT_PASSWORD", generateRandom(12));
   content = appendIfMissing(content, "MONGO_DATABASE", "maess_memory");
@@ -604,8 +634,22 @@ async function init() {
   log("👉 Rode: maess start\n");
 }
 
-function start() {
+async function start() {
   if (!validateStartRequirements()) {
+    return;
+  }
+
+  const hostHttpPort = getHostHttpPort();
+  if (!isValidPort(hostHttpPort)) {
+    log(`❌ Porta inválida em HOST_HTTP_PORT: ${hostHttpPort}`);
+    log("👉 Defina uma porta válida no arquivo `.env`.");
+    return;
+  }
+
+  const portAvailable = await isPortAvailable(hostHttpPort);
+  if (!portAvailable) {
+    log(`❌ A porta ${hostHttpPort} já está em uso.`);
+    log("👉 Libere a porta ou altere HOST_HTTP_PORT no `.env`.");
     return;
   }
 
@@ -670,7 +714,7 @@ function printUsage() {
       break;
     case "start":
     case "up":
-      start();
+      await start();
       break;
     case "clear-config":
     case "remove-config":
