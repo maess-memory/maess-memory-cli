@@ -218,6 +218,15 @@ function removeDockerFiles() {
   log("ℹ️ Diretório .maess não encontrado.");
 }
 
+function hasCodexCli() {
+  try {
+    execSync("codex --version", { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function hasDocker() {
   try {
     execSync("docker --version", { stdio: "ignore" });
@@ -367,6 +376,28 @@ function findCodexConfig() {
   ].find(p => fs.existsSync(p));
 }
 
+function getDefaultCodexConfigPath() {
+  return path.join(os.homedir(), ".codex", "config.toml");
+}
+
+function ensureCodexConfigPath() {
+  const existingConfigPath = findCodexConfig();
+
+  if (existingConfigPath) {
+    return existingConfigPath;
+  }
+
+  const defaultConfigPath = getDefaultCodexConfigPath();
+  ensureDir(path.dirname(defaultConfigPath));
+
+  if (!fs.existsSync(defaultConfigPath)) {
+    fs.writeFileSync(defaultConfigPath, "");
+    log("✅ Arquivo inicial do Codex criado em `~/.codex/config.toml`.");
+  }
+
+  return defaultConfigPath;
+}
+
 const MAESS_HOOKS_START = "# >>> Maess Memory Hooks";
 const MAESS_HOOKS_END = "# <<< Maess Memory Hooks";
 const MAESS_MCP_START = "# >>> Maess Memory MCP";
@@ -472,12 +503,7 @@ function removeMcpServer(content) {
 }
 
 async function setupCodexConfig() {
-  const configPath = findCodexConfig();
-
-  if (!configPath) {
-    log("⚠️ Codex não encontrado.");
-    return;
-  }
+  const configPath = ensureCodexConfigPath();
 
   let content = fs.readFileSync(configPath, "utf-8");
 
@@ -519,6 +545,45 @@ function validateEnvironment() {
   }
 }
 
+function validateInitRequirements() {
+  const hasDockerInstalled = hasDocker();
+  const hasCodexInstalled = hasCodexCli();
+
+  if (hasDockerInstalled && hasCodexInstalled) {
+    return true;
+  }
+
+  log("❌ Pré-requisitos não atendidos para executar `maess init`.");
+  log("");
+
+  if (!hasDockerInstalled) {
+    log("• Docker não encontrado.");
+    log("  Instale o Docker Desktop e garanta que o comando `docker` esteja disponível.");
+    log("");
+  }
+
+  if (!hasCodexInstalled) {
+    log("• Codex CLI não encontrado.");
+    log("  Instale o Codex e garanta que o comando `codex` esteja disponível no terminal.");
+    log("");
+  }
+
+  log("👉 Depois disso, rode novamente: `npx maess init`");
+  return false;
+}
+
+function validateStartRequirements() {
+  const dockerComposePath = path.join(projectRoot, ".maess", "docker-compose.maess.yml");
+
+  if (!fs.existsSync(dockerComposePath)) {
+    log("❌ Projeto ainda não configurado.");
+    log("👉 Rode primeiro: `npx maess init`");
+    return false;
+  }
+
+  return true;
+}
+
 // =========================
 // CLI
 // =========================
@@ -526,6 +591,10 @@ async function init() {
   log("🚀 Configurando Maess Memory...\n");
 
   validateEnvironment();
+  if (!validateInitRequirements()) {
+    return;
+  }
+
   createEnv();
   setupDocker();
   setupCodex();
@@ -536,6 +605,10 @@ async function init() {
 }
 
 function start() {
+  if (!validateStartRequirements()) {
+    return;
+  }
+
   startDocker();
 }
 

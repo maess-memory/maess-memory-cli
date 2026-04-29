@@ -17,6 +17,11 @@ https://github.com/maess-memory/maess-memory-cli
 npm i @maess-systems/memory-cli
 ```
 
+Pré-requisitos para usar o CLI:
+
+- Docker instalado
+- Codex CLI instalado
+
 ---
 
 ### 2. Configure
@@ -127,6 +132,10 @@ npx maess down
 - instala hooks do Codex (`.codex/`)
 - prepara integração com MCP
 - deixa o projeto pronto para usar memória
+
+Se Docker ou Codex não estiverem instalados, o comando `npx maess init` interrompe a execução e mostra o que precisa ser ajustado antes do setup.
+
+Se o arquivo `~/.codex/config.toml` ainda não existir, o `init` cria esse arquivo automaticamente antes de aplicar a configuração.
 
 ## 🧹 Como limpar a configuração do Codex
 
